@@ -77,7 +77,7 @@ public class JReader {
 			sbuf.append(ch);
 		}
 		
-		return StringO.EMPTY;
+		return sbuf.toString();
 	}
 	
 	/**
