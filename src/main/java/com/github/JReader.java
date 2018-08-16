@@ -123,9 +123,9 @@ public class JReader {
 	}
 	
 	/**
-	 * Either : or not \:
+	 * Either : and not \:
 	 */
-	private static final String REGEX_PAIR = "(?=[^\\\\\\\\])" + JParser.PAIR_SEPARATOR + "|^" + JParser.PAIR_SEPARATOR;
+	private static final String REGEX_PAIR = "(?<![\\\\])[" + JParser.PAIR_SEPARATOR + "]";
 	
 	/**
 	 * Using pattern: 
