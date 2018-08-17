@@ -89,7 +89,7 @@ public class JParser {
 	 * @return
 	 */
 	public static boolean validate(String json) {
-		if (StringUtil.isBlank(json)) return false;
+		if (StringO.isBlank(json)) return false;
 
 		Stack<Character> stack = new Stack<Character>();
 		char[] jstring = json.toCharArray();
@@ -139,108 +139,175 @@ public class JParser {
 	}
 
 	/**
-	 * Using path to indicate location of JSON. For example: {[,
+	 * Common interface for seek.
 	 * 
 	 * @param path
-	 * @return
+	 * @param json
+	 * @return pos
 	 */
-	public static String getValue(String path, String json) {
-		if (StringO.isNotBlank(path) && isMeta(path) && StringO.isNotBlank(json) && validate(json) ) {
-			char[] chars = path.toCharArray();
-
-			int pos = -1;			
-			for(char ch : chars) pos = json.indexOf(ch, (pos + 1));		
-
-			String object = json.substring(++ pos);
-			if (StringO.isNull(object) || StringO.isEmpty(object)) return StringO.EMPTY; //no found
+	public static int locateMeta(String path, String json) {
+		if (StringO.isBlank(json)) return -1;
+		if (StringO.isBlank(path)) return 0;
+		
+		char[] ps = path.toCharArray();
+		char[] js = json.toCharArray();
+		
+		int p = 0;
+		int pLength = ps.length;
+		int jsLength = js.length;
+		
+		char chr = 0; //for string quote
+		for (int i = 0; i < jsLength; i ++) {
+			if (!isMeta(js[i])) continue;
 			
-			if (STRING_QUOTE == chars[chars.length - 1]) {
-				do {
-					pos = 0;
-					pos = object.indexOf(STRING_QUOTE);
-					if (pos < 0) return StringO.EMPTY; //error, not closed.
-				} while (META_QUOTE == object.charAt(pos - 1)); //\meta
-				
-				object = object.substring(0, pos);
-				return object;
-			}
-			
-			chars = null;
-			pos = 0;
-			
-			chars = object.toCharArray();
-			//for(char ch : chars) {
-			int length = object.length();
-			for (int i = 0; i < length; i ++) {
-				char ch = chars[i];
-				if (isMeta(ch) && STRING_QUOTE != ch && i > 0 &&  META_QUOTE != chars[i - 1]) break; //\meta 
-				else if (isMeta(ch) && STRING_QUOTE != ch) break; 
-
-				pos ++;
-			}
-			object = object.substring(0, pos);
-			if (object.startsWith(""+STRING_QUOTE)) object = StringO.subString(""+STRING_QUOTE, ""+STRING_QUOTE, object);
-			
-			return object;
+			if (STRING_QUOTE == chr) {
+				if (STRING_QUOTE == js[i]) {
+					if (i > 0 && META_QUOTE == js[i - 1]) continue;//"\""
+					
+					chr = 0;
+					if (STRING_QUOTE == ps[p]) p++;
+				}
+			} else {
+				if (STRING_QUOTE == js[i]) chr = STRING_QUOTE;
+				if (js[i] == ps[p]) p++;
+			} 
+			if (p == pLength) return i;//found
 		}
-		return StringO.EMPTY; //no found
+		return -1;
 	}
 	
-	public static String getSub(String path, String json) {
-		if (StringO.isNotBlank(path) && isMeta(path) && StringO.isNotBlank(json) && validate(json) ) {
-			char[] chars = path.toCharArray();
+	/**
+	 * Get a quoted string
+	 * 
+	 * @param json
+	 * @return pair name or value, array element value, not quoted.
+	 */
+	public static String getAString(String json) {
+		String js = StringO.trim(json);
+		if (StringO.isEmpty(js) || !js.startsWith(""+STRING_QUOTE)) return StringO.EMPTY;
+		
+		int length = js.length();
+		int i = 1;
+		for (; i < length; i ++) {
+			char ch = js.charAt(i);
 			
-			int pos = -1;			
-			for(char ch : chars) pos = json.indexOf(ch, (pos + 1));
-			if (pos < 0) return StringO.EMPTY;//no found
-			String object = json.substring(++ pos);
-			if (StringO.isNull(object) || StringO.isEmpty(object)) return StringO.EMPTY;//no found
-			
-			if (STRING_QUOTE == chars[chars.length - 1]) {
-				/*pos = 0;
-				pos = object.indexOf(STRING_QUOTE);*/
-				do {
-					pos = 0;
-					pos = object.indexOf(STRING_QUOTE);
-					if (pos < 0) return StringO.EMPTY; //error, not closed.
-				} while (META_QUOTE == object.charAt(pos - 1)); //\meta
-				
-				object = object.substring(0, pos);
-				return object;
+			if (STRING_QUOTE == ch) {
+				char chr = js.charAt(i - 1);
+				if (META_QUOTE == chr) continue; 
+				else break;//fond
 			}
-			
-			chars = null;
-			pos = 0;
-			
-			chars = object.toCharArray();
-			Stack<Character> signs = new Stack<Character>();
-			/*for(char ch : chars) {*/
-			int length = object.length();
-			for (int i = 0; i < length; i ++) {
-				pos ++;
-				char ch = chars[i];
-				
-				if (isMeta(ch) && STRING_QUOTE != ch && (i > 0 &&  META_QUOTE != chars[i - 1] || 0 == i)) {// \meta					
-					if (signs.empty()) {
-						//check if normal signs
-						if (CLASS_END == ch || ARRAY_END == ch /*|| ELEMENT_SEPARATOR == ch*/) break;
-						else if (CLASS_START == ch || ARRAY_START == ch) signs.push(ch);
-					} else {
-						if (CLASS_START == ch || ARRAY_START == ch) signs.push(ch);
-						else if (CLASS_END == ch || ARRAY_END == ch){
-							/*char prev =*/ signs.pop();//if json is validated, then automatically matched.							
-							if (signs.empty()) break;
-						}
-					}
-				}
-			}
-			
-			object = object.substring(0, pos);
-			if (object.startsWith(""+STRING_QUOTE)) object = StringO.subString(""+STRING_QUOTE, ""+STRING_QUOTE, object);
-			
-			return object;
 		}
-		return StringO.EMPTY; //no found
+		if (length == i) return StringO.EMPTY;
+		js = js.substring(1, i);
+		
+		return js;
+	}
+	
+	public static String getASub(String json) {
+		String js = StringO.trim(json);
+		if (StringO.isEmpty(js)) return StringO.EMPTY;
+				
+		Stack<Character> stack = new Stack<Character>();
+		int length = js.length();
+		int i = 0;
+		char ch = 0;
+		char chr = 0;
+		for (; i < length; i ++) {
+			ch = js.charAt(i);			
+			if (!isMeta(ch)) continue;
+			
+			if (STRING_QUOTE == chr) {
+				if (STRING_QUOTE == ch) {					
+					if (i > 0 && META_QUOTE == js.charAt(i - 1)) continue;//"\""
+					
+					chr = 0;
+					try {
+						char meta = stack.pop();
+						if (STRING_QUOTE != meta) return StringO.EMPTY;
+					} catch (EmptyStackException e) {
+						return StringO.EMPTY;
+					}
+					
+					if  (stack.isEmpty()) break; //found
+				} else continue;
+			} else if (STRING_QUOTE == ch) {
+				chr = ch;
+				stack.push(ch);
+				continue;
+			} else if (CLASS_START == ch || ARRAY_START == ch) {
+				stack.push(ch);
+				continue;
+			} else if (CLASS_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (CLASS_START != meta) return StringO.EMPTY;
+				} catch (EmptyStackException e) {
+					return StringO.EMPTY;
+				}
+				
+				if (stack.isEmpty()) break;
+			} else if (ARRAY_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (ARRAY_START != meta)  return StringO.EMPTY;
+				} catch (EmptyStackException e) {
+					return StringO.EMPTY;
+				}
+				
+				if (stack.isEmpty()) break;
+			} else if (ELEMENT_SEPARATOR == ch) {
+				if (stack.isEmpty()) stack.push(ch);
+				else {
+					char tmp = stack.pop();
+					if ((ELEMENT_SEPARATOR == tmp || PAIR_SEPARATOR == tmp )&& stack.isEmpty()) break;
+					else stack.push(tmp);
+				}
+			} else if (PAIR_SEPARATOR == ch && stack.isEmpty()) stack.push(ch);
+		}
+		if ( i == length) return StringO.EMPTY;
+		else {
+			js = StringO.trim(js.substring(0, i + 1));			
+			return js;
+		}
+	}
+
+	/**
+	 * Generic method to parse a string.
+	 * 
+	 * @param path
+	 * @param json
+	 * @return
+	 */
+	public static String parse(String path, String json) {
+		if (StringO.isBlank(path) || StringO.isBlank(json)) return StringO.EMPTY;		
+		String p = StringO.trim(path);
+		String js = StringO.trim(json);		
+		
+		int pos = locateMeta(p, js);
+		if (pos < 0) return StringO.EMPTY;	
+		js = js.substring(pos);
+		
+		return getASub(js);
+	}
+	
+	/**
+	 * Trim leading and ending metas.
+	 * 
+	 * @param json
+	 * @return
+	 */
+	public static String trim(String json) {
+		String js = StringO.trim(json);
+		
+		char ch = js.charAt(0);
+		if (isMeta(ch)) js = js.substring(1);
+		ch = 0;
+		int length = js.length();
+		if (length-- > 0) {
+			ch = js.charAt(length);
+			if (isMeta(ch)) js = js.substring(0, length);
+		}
+		return js;
 	}
 	
 }
