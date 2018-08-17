@@ -97,33 +97,29 @@ public class JParser {
 		//for(char ch : jstring) {
 		for (int i = 0; i < length; i ++) {
 			char ch = jstring[i];
-			if (isMeta(ch)) {
-				if (i > 0 && META_QUOTE == jstring[i - 1]) continue;//in case \meta
-				
-				else if (CLASS_START == ch || ARRAY_START == ch || STRING_QUOTE == ch) stack.push(ch);
-				else if (CLASS_END == ch) {
-					try {
-						char meta = stack.pop();
-						if (CLASS_START != meta) return false;
-					} catch (EmptyStackException e) {
-						return false;
-					}
+			if (!isMeta(ch)) continue;
+			if (i > 0 && META_QUOTE == jstring[i - 1]) continue;//in case \meta
+			else if (CLASS_START == ch || ARRAY_START == ch || STRING_QUOTE == ch) stack.push(ch);
+			else if (CLASS_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (CLASS_START != meta) return false;
+				} catch (EmptyStackException e) {
+					return false;
 				}
-				else if (ARRAY_END == ch) {
-					try {
-						char meta = stack.pop();
-						if (ARRAY_START != meta) return false;
-					} catch (EmptyStackException e) {
-						return false;
-					}					
+			} else if (ARRAY_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (ARRAY_START != meta) return false;
+				} catch (EmptyStackException e) {
+					return false;
 				}
-				else if (STRING_QUOTE == ch) {
-					try {
-						char meta = stack.pop();
-						if (STRING_QUOTE != meta) return false;
-					} catch (EmptyStackException e) {
-						return false;
-					}
+			} else if (STRING_QUOTE == ch) {
+				try {
+					char meta = stack.pop();
+					if (STRING_QUOTE != meta) return false;
+				} catch (EmptyStackException e) {
+					return false;
 				}
 			}
 		}
