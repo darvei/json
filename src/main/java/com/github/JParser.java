@@ -323,6 +323,23 @@ public class JParser {
 	}
 	
 	/**
+	 * get value by name
+	 */
+	public static String getPairValue(String name, String pair) {
+		if (StringO.isEmpty(pair)) return StringO.EMPTY;
+		
+		String p = StringO.trim(pair);		
+		if (StringO.isEmpty(name) && p.startsWith(PAIR_SEPARATOR+"")) return p.substring(1);
+		else {
+			p = StringO.between(STRING_QUOTE+name+STRING_QUOTE, "", p);
+			if (StringO.isEmpty(p)) return StringO.EMPTY;
+			p = StringO.trim(p);
+			if (p.startsWith(PAIR_SEPARATOR+"")) return p.substring(1);
+			else return p;
+		}
+	}
+	
+	/**
 	 * Trim leading and ending metas.
 	 * 
 	 * @param json
