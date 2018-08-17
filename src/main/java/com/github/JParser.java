@@ -177,6 +177,76 @@ public class JParser {
 	}
 	
 	/**
+	 * Common method to find a inner defined unit.
+	 * 
+	 * @param json
+	 * @return
+	 */
+	public static int locateInner(String json) {
+		if (StringO.isBlank(json)) return -1;
+		
+		Stack<Character> stack = new Stack<Character>();
+		int length = json.length();
+		int i = 0;
+		char ch = 0;
+		char chr = 0;
+		for (; i < length; i ++) {
+			ch = json.charAt(i);			
+			if (!isMeta(ch)) continue;
+			
+			if (STRING_QUOTE == chr) {
+				if (STRING_QUOTE == ch) {					
+					if (i > 0 && META_QUOTE == json.charAt(i - 1)) continue;//"\""
+					
+					chr = 0;
+					try {
+						char meta = stack.pop();
+						if (STRING_QUOTE != meta) return -1;
+					} catch (EmptyStackException e) {
+						return -1;
+					}
+					
+					if  (stack.isEmpty()) break; //found
+				} else continue;
+			} else if (STRING_QUOTE == ch) {
+				chr = ch;
+				stack.push(ch);
+				continue;
+			} else if (CLASS_START == ch || ARRAY_START == ch) {
+				stack.push(ch);
+				continue;
+			} else if (CLASS_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (CLASS_START != meta) return -1;
+				} catch (EmptyStackException e) {
+					return -1;
+				}
+				
+				if (stack.isEmpty()) break;
+			} else if (ARRAY_END == ch) {
+				try {
+					char meta = stack.pop();
+					if (ARRAY_START != meta)  return -1;
+				} catch (EmptyStackException e) {
+					return -1;
+				}
+				
+				if (stack.isEmpty()) break;
+			} else if (ELEMENT_SEPARATOR == ch) {
+				if (stack.isEmpty()) stack.push(ch);
+				else {
+					char tmp = stack.pop();
+					if ((ELEMENT_SEPARATOR == tmp || PAIR_SEPARATOR == tmp )&& stack.isEmpty()) break;
+					else stack.push(tmp);
+				}
+			} else if (PAIR_SEPARATOR == ch && stack.isEmpty()) stack.push(ch);
+		}
+		if ( i == length) return -1;
+		else return i;
+	}
+	
+	/**
 	 * Get a quoted string
 	 * 
 	 * @param json
@@ -203,70 +273,32 @@ public class JParser {
 		return js;
 	}
 	
+	/**
+	 * Skip a sub for navigation
+	 * 
+	 * @param json
+	 * @return
+	 */
+	public static String skipASub(String json) {
+		String js = StringO.trim(json);
+		if (StringO.isEmpty(js)) return StringO.EMPTY;
+				
+		int pos = locateInner(js);
+		if (pos < 0) return StringO.EMPTY;
+		else {
+			js = StringO.trim(js.substring(pos));
+			return js;
+		}
+	}
+	
 	public static String getASub(String json) {
 		String js = StringO.trim(json);
 		if (StringO.isEmpty(js)) return StringO.EMPTY;
 				
-		Stack<Character> stack = new Stack<Character>();
-		int length = js.length();
-		int i = 0;
-		char ch = 0;
-		char chr = 0;
-		for (; i < length; i ++) {
-			ch = js.charAt(i);			
-			if (!isMeta(ch)) continue;
-			
-			if (STRING_QUOTE == chr) {
-				if (STRING_QUOTE == ch) {					
-					if (i > 0 && META_QUOTE == js.charAt(i - 1)) continue;//"\""
-					
-					chr = 0;
-					try {
-						char meta = stack.pop();
-						if (STRING_QUOTE != meta) return StringO.EMPTY;
-					} catch (EmptyStackException e) {
-						return StringO.EMPTY;
-					}
-					
-					if  (stack.isEmpty()) break; //found
-				} else continue;
-			} else if (STRING_QUOTE == ch) {
-				chr = ch;
-				stack.push(ch);
-				continue;
-			} else if (CLASS_START == ch || ARRAY_START == ch) {
-				stack.push(ch);
-				continue;
-			} else if (CLASS_END == ch) {
-				try {
-					char meta = stack.pop();
-					if (CLASS_START != meta) return StringO.EMPTY;
-				} catch (EmptyStackException e) {
-					return StringO.EMPTY;
-				}
-				
-				if (stack.isEmpty()) break;
-			} else if (ARRAY_END == ch) {
-				try {
-					char meta = stack.pop();
-					if (ARRAY_START != meta)  return StringO.EMPTY;
-				} catch (EmptyStackException e) {
-					return StringO.EMPTY;
-				}
-				
-				if (stack.isEmpty()) break;
-			} else if (ELEMENT_SEPARATOR == ch) {
-				if (stack.isEmpty()) stack.push(ch);
-				else {
-					char tmp = stack.pop();
-					if ((ELEMENT_SEPARATOR == tmp || PAIR_SEPARATOR == tmp )&& stack.isEmpty()) break;
-					else stack.push(tmp);
-				}
-			} else if (PAIR_SEPARATOR == ch && stack.isEmpty()) stack.push(ch);
-		}
-		if ( i == length) return StringO.EMPTY;
+		int pos = locateInner(js);
+		if (pos < 0) return StringO.EMPTY;
 		else {
-			js = StringO.trim(js.substring(0, i + 1));			
+			js = StringO.trim(js.substring(0, pos + 1));
 			return js;
 		}
 	}
