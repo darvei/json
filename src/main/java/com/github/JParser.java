@@ -340,6 +340,73 @@ public class JParser {
 	}
 	
 	/**
+	 * Query a value.
+	 * 
+	 * @param path
+	 * name1:name2:[3]:name4
+	 * :name1:
+	 * :
+	 * 
+	 * @param json
+	 * @return
+	 */
+	public static String query(String path, String json) {
+		if (StringO.isBlank(path) || StringO.isBlank(json)) return StringO.EMPTY;
+		
+		String p = StringO.trim(path);
+		String j = StringO.trim(json);
+		
+		while (StringO.isNotBlank(p)) {
+			if (p.startsWith(""+STRING_QUOTE) || !p.startsWith(""+PAIR_SEPARATOR) || !p.startsWith(""+ARRAY_START)) {
+				String aname = getAString(p);
+				//with double-quote
+				p = getPairValue(aname, p);
+
+				j = trim(j);			
+				while (StringO.isNotBlank(j)) { //hasNext
+					String name = getAString(j);
+					if (name.compareTo(aname) == 0) {
+						j = getASub(j);
+						p = getPairValue(name, p);
+						
+						break;
+					} else j = skipASub(j);
+				}
+				if (StringO.isEmpty(j)) return StringO.EMPTY;
+			} if (p.startsWith(""+ARRAY_START)) {
+				j = StringO.trim(j);
+				if (!j.startsWith(""+ARRAY_START)) return StringO.EMPTY; 				
+				j = trim(j);
+				
+				int pos = p.indexOf(""+ARRAY_END);
+				if (pos < 0) return StringO.EMPTY;
+				String num = p.substring(1, pos);
+				int n = -1;
+				try {
+					n = Integer.parseInt(num);
+				} catch (NumberFormatException e) {}				
+				if (-1 == n) return StringO.EMPTY;
+				else {
+					while (n-- > 0) j = skipASub(j);
+					j = getASub(j);
+					if (StringO.isEmpty(j)) return StringO.EMPTY;
+				}
+			} else if (p.startsWith(""+PAIR_SEPARATOR)) {//default one means first one
+				p = p.substring(1);
+				
+				j = trim(j);
+				j = StringO.trim(j);
+				if (j.startsWith(""+PAIR_SEPARATOR)) {
+					j = getASub(j);
+					return getPairValue("", j);
+				}
+			} else return StringO.EMPTY;
+		}
+		
+		return StringO.EMPTY;
+	}
+	
+	/**
 	 * Trim leading and ending metas.
 	 * 
 	 * @param json
