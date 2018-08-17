@@ -206,7 +206,7 @@ public class JParser {
 						return -1;
 					}
 					
-					if  (stack.isEmpty()) break; //found
+					//if  (stack.isEmpty()) break; //found
 				} else continue;
 			} else if (STRING_QUOTE == ch) {
 				chr = ch;
@@ -286,7 +286,7 @@ public class JParser {
 		int pos = locateInner(js);
 		if (pos < 0) return StringO.EMPTY;
 		else {
-			js = StringO.trim(js.substring(pos));
+			js = StringO.trim(js.substring(pos + 1));
 			return js;
 		}
 	}
@@ -298,7 +298,7 @@ public class JParser {
 		int pos = locateInner(js);
 		if (pos < 0) return StringO.EMPTY;
 		else {
-			js = StringO.trim(js.substring(0, pos + 1));
+			js = StringO.trim(js.substring(0, pos));
 			return js;
 		}
 	}
