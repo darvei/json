@@ -89,24 +89,20 @@ public class JParser {
 	 * @return
 	 */
 	public static boolean validate(String json) {
-		if (StringO.isBlank(json)) return false;
-		
+		if (StringUtil.isBlank(json)) return false;
+
 		Stack<Character> stack = new Stack<Character>();
 		char[] jstring = json.toCharArray();
 		int length = jstring.length;
-		//for(char ch : jstring) {
+		// for(char ch : jstring) {
 		char chr = 0; //last double quote
 		for (int i = 0; i < length; i++) {
 			char ch = jstring[i];
 			if (!isMeta(ch)) continue;
-			if (i > 0 && META_QUOTE == jstring[i - 1]) continue;// in case \meta			 
-			else if (CLASS_START == ch || ARRAY_START == ch) {
-				stack.push(ch);
-			} else if (STRING_QUOTE == ch) {
-				if (0 == chr) {
-					chr = STRING_QUOTE;
-					stack.push(ch);
-				} else if (STRING_QUOTE == chr) {
+			if (STRING_QUOTE == chr) {
+				if (STRING_QUOTE == ch) {
+					if (i > 0 && META_QUOTE == jstring[i - 1]) continue;//"\""
+					
 					chr = 0;
 					try {
 						char meta = stack.pop();
@@ -114,8 +110,14 @@ public class JParser {
 					} catch (EmptyStackException e) {
 						return false;
 					}
-				}				
-			} else if (CLASS_END == ch) {
+				} else continue;
+			} else if (i > 0 && META_QUOTE == jstring[i - 1]) return false;
+			else if (STRING_QUOTE == ch) {
+				chr = ch;
+				stack.push(ch);
+			}
+			else if (CLASS_START == ch || ARRAY_START == ch) stack.push(ch);
+			else if (CLASS_END == ch) {
 				try {
 					char meta = stack.pop();
 					if (CLASS_START != meta) return false;
