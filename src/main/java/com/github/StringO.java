@@ -171,7 +171,7 @@ public class StringO extends ObjectO {
 	}
 	
 	/**
-	 * String between a start and an end tag. Eg:
+	 * String between a start and/or an end tag. Eg:
 	 * 1) [[abc] between [[] is abc.
 	 * 2) [abc] between [[] is [abc] 
 	 * 
@@ -181,21 +181,26 @@ public class StringO extends ObjectO {
 	 * @return
 	 */
 	public static String between(String prefix, String suffix, String string) {
-		String s = string;
-		if (isNotEmpty(prefix) && isNotEmpty(suffix) && isNotEmpty(s)) {
-			int start = 0;
-			start = string.indexOf(prefix);
-			if (start < 0) return string;
+		if (isEmpty(string)) return EMPTY;
+		if (isEmpty(prefix) && isEmpty(suffix)) return string;
+		
+		String s = string;		
+		int pos = 0;
+		
+		if (isNotEmpty(prefix)) {
+			pos = string.indexOf(prefix);
+			if (pos < 0) return EMPTY;
 			
-			start += prefix.length();
-			s = string.substring(start);
+			pos += prefix.length();
+			s = string.substring(pos);
+		}
+		
+		pos = 0;	
+		if (isNotEmpty(suffix)) {
+			pos = s.lastIndexOf(suffix);
+			if (pos < 0) return EMPTY;
 			
-			start = 0;			
-			start = s.indexOf(suffix);
-			if (start < 0) return string;
-			
-			start += suffix.length() - 1;
-			s = s.substring(0, start);
+			s = s.substring(0, pos);
 		}
 		return s;
 	}
