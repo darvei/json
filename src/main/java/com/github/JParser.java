@@ -95,12 +95,27 @@ public class JParser {
 		char[] jstring = json.toCharArray();
 		int length = jstring.length;
 		//for(char ch : jstring) {
-		for (int i = 0; i < length; i ++) {
+		char chr = 0; //last double quote
+		for (int i = 0; i < length; i++) {
 			char ch = jstring[i];
 			if (!isMeta(ch)) continue;
-			if (i > 0 && META_QUOTE == jstring[i - 1]) continue;//in case \meta
-			else if (CLASS_START == ch || ARRAY_START == ch || STRING_QUOTE == ch) stack.push(ch);
-			else if (CLASS_END == ch) {
+			if (i > 0 && META_QUOTE == jstring[i - 1]) continue;// in case \meta			 
+			else if (CLASS_START == ch || ARRAY_START == ch) {
+				stack.push(ch);
+			} else if (STRING_QUOTE == ch) {
+				if (0 == chr) {
+					chr = STRING_QUOTE;
+					stack.push(ch);
+				} else if (STRING_QUOTE == chr) {
+					chr = 0;
+					try {
+						char meta = stack.pop();
+						if (STRING_QUOTE != meta) return false;
+					} catch (EmptyStackException e) {
+						return false;
+					}
+				}				
+			} else if (CLASS_END == ch) {
 				try {
 					char meta = stack.pop();
 					if (CLASS_START != meta) return false;
@@ -114,16 +129,9 @@ public class JParser {
 				} catch (EmptyStackException e) {
 					return false;
 				}
-			} else if (STRING_QUOTE == ch) {
-				try {
-					char meta = stack.pop();
-					if (STRING_QUOTE != meta) return false;
-				} catch (EmptyStackException e) {
-					return false;
-				}
 			}
 		}
-		
+
 		if (stack.isEmpty()) return true;
 		return false;
 	}
