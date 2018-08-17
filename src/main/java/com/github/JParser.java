@@ -1,5 +1,6 @@
 package com.github;
 
+import java.util.EmptyStackException;
 import java.util.Stack;
 
 /**
@@ -424,7 +425,7 @@ public class JParser {
 		return js;
 	}
 	
-	class StringO {
+	static class StringO {
 
 		public static final String EMPTY = "";
 
