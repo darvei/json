@@ -279,7 +279,7 @@ public class JParser {
 	 * @return
 	 */
 	public static String parse(String path, String json) {
-		if (StringO.isBlank(path) || StringO.isBlank(json)) return StringO.EMPTY;		
+		if (StringO.isBlank(path) || StringO.isBlank(json) || !isMeta(path)) return StringO.EMPTY;		
 		String p = StringO.trim(path);
 		String js = StringO.trim(json);		
 		
